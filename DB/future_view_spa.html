@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미래 기술 트렌드 | Gartner 2024-2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: "Cool & Professional" (Base: #FFFFFF, BG: #F8FAFC, Text: #1E293B, Primary: #3B82F6, Accent: #10B981) -->
+    <!-- Application Structure Plan: [SPA with 3 views: 'Dashboard', 'Technology Details', 'Timeline', navigated by JS-powered tabs. Dashboard shows KPIs and a summary bar chart. Details uses interactive cards with JS toggles for more info & donut charts. Timeline uses an HTML/CSS layout. This structure allows users to choose their exploration depth (overview, specific tech, or time) and is more interactive than a static report.] -->
+    <!-- Visualization & Content Choices: [GenAI Adoption (80%) -> Inform -> Doughnut Chart (Chart.js) -> Interactive card detail -> Clear proportion. | ICP Adoption (50%) -> Inform -> Doughnut Chart (Chart.js) -> Interactive card detail -> Clear proportion. | Platform Eng. Adoption (80%) -> Inform -> Doughnut Chart (Chart.js) -> Interactive card detail -> Clear proportion. | Adoption Timelines (2-10+ yrs) -> Compare -> Horizontal Bar Chart (Chart.js) -> Dashboard view -> Quick visual comparison of all tech timelines. | Timeline View -> Organize/Change -> HTML/CSS Timeline -> Timeline view -> Chronological grouping of tech.] -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #F8FAFC;
+            color: #1E293B;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        .chart-container-bar-h {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 500px;
+        }
+
+        .chart-container-doughnut {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+
+        .nav-btn {
+            @apply px-4 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors;
+        }
+        .nav-btn.active {
+            @apply bg-blue-600 text-white hover:bg-blue-700;
+        }
+
+        .view {
+            display: none;
+        }
+        .view.active {
+            display: block;
+        }
+        
+        .tech-card-detail {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        
+        .tech-card-detail.show {
+            display: block;
+            max-height: 500px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .timeline-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+        .timeline-container::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background-color: #CBD5E1;
+        }
+        @media (min-width: 768px) {
+            .timeline-container::before {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+        .timeline-block {
+            position: relative;
+            margin-bottom: 30px;
+            padding-left: 40px;
+        }
+        @media (min-width: 768px) {
+            .timeline-block {
+                width: 50%;
+                padding-left: 0;
+                padding-right: 40px;
+            }
+            .timeline-block:nth-child(even) {
+                margin-left: 50%;
+                padding-left: 40px;
+                padding-right: 0;
+            }
+        }
+        .timeline-dot {
+            position: absolute;
+            top: 5px;
+            left: -1px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #F8FAFC;
+            border: 4px solid #3B82F6;
+        }
+        @media (min-width: 768px) {
+            .timeline-dot {
+                left: 50%;
+                transform: translateX(-50%);
+                top: 5px;
+            }
+            .timeline-block:nth-child(odd) .timeline-dot {
+                left: auto;
+                right: -12px;
+            }
+        }
+        .timeline-content {
+            @apply bg-white p-6 rounded-lg shadow-md;
+        }
+        .timeline-time {
+            @apply text-xl font-bold text-blue-600 mb-2;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-6 max-w-7xl">
+            <h1 class="text-3xl font-bold text-center text-blue-700">Gartner 2024-2025: 미래 기술 트렌드</h1>
+            <p class="text-center text-lg text-gray-600 mt-1">대화형 리포트</p>
+        </div>
+    </header>
+
+    <nav class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <div class="flex justify-center space-x-2 md:space-x-4 py-3" id="navigation">
+                <button class="nav-btn active" data-view="dashboard">대시보드</button>
+                <button class="nav-btn" data-view="details">기술 상세</button>
+                <button class="nav-btn" data-view="timeline">도입 타임라인</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <section id="dashboard" class="view active">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">핵심 요약 대시보드</h2>
+            <p class="text-base text-gray-600 mb-8">
+                Gartner 2024-2025 보고서의 핵심 데이터를 요약한 대시보드입니다. 주요 기술의 도입 시기와 예상되는 영향을 한눈에 파악하세요.
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">GenAI 기업 도입률 (2026년 예측)</h3>
+                    <p class="text-5xl font-bold text-blue-600">80%<span class="text-3xl">+</span></p>
+                    <p class="text-sm text-gray-500 mt-2">(2023년 초 5% 미만)</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">플랫폼 엔지니어링 (2026년 예측)</h3>
+                    <p class="text-5xl font-bold text-blue-600">80%</p>
+                    <p class="text-sm text-gray-500 mt-2">(대규모 소프트웨어 조직)</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md text-center">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-2">산업 클라우드 (2027년 예측)</h3>
+                    <p class="text-5xl font-bold text-blue-600">50%<span class="text-3xl">+</span></p>
+                    <p class="text-sm text-gray-500 mt-2">(기업 활용률)</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-bold text-center text-gray-800 mb-4">기술별 예상 주류 도입 시기 (최대치 기준)</h3>
+                <div class="chart-container-bar-h">
+                    <canvas id="timelineBarChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="details" class="view">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">기술 분야별 상세 정보</h2>
+            <p class="text-base text-gray-600 mb-8">
+                각 기술 분야별 상세 정보입니다. '자세히 보기'를 클릭하여 관련 통계와 분석 내용을 확인하세요.
+            </p>
+            
+            <div class="space-y-6" id="tech-card-container">
+                
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-700">보편화된 생성형 AI (Democratized GenAI)</h3>
+                                <p class="text-sm font-medium text-gray-600">예상 도입 시기: 2-5년 (2026년경)</p>
+                            </div>
+                            <button class="toggle-detail px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">자세히 보기</button>
+                        </div>
+                        <div class="tech-card-detail mt-6 pt-6 border-t border-gray-200">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div>
+                                    <h4 class="font-semibold text-lg mb-2">주요 예측</h4>
+                                    <p class="text-gray-700">2026년까지 80% 이상의 기업이 GenAI API나 모델을 사용할 것으로 예측됩니다 (2023년 초 5% 미만).</p>
+                                </div>
+                                <div class="chart-container-doughnut">
+                                    <canvas id="genAiChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-700">AI 신뢰, 리스크 및 보안 관리 (AI TRiSM)</h3>
+                                <p class="text-sm font-medium text-gray-600">예상 도입 시기: 2-5년 (2026년경)</p>
+                            </div>
+                            <button class="toggle-detail px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">자세히 보기</button>
+                        </div>
+                        <div class="tech-card-detail mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold text-lg mb-2">주요 예측</h4>
+                            <p class="text-gray-700 mb-4">2026년까지 AI TRiSM을 적용하는 기업이 AI 모델의 부정확성이나 편향성으로 인한 오류 정보를 최대 80%까지 줄일 것으로 예측됩니다.</p>
+                            <div class="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded-md">
+                                <p class="text-3xl font-bold text-center">최대 80%</p>
+                                <p class="text-center font-semibold">오류 정보 감소</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-700">산업 클라우드 플랫폼 (Industry Cloud Platforms)</h3>
+                                <p class="text-sm font-medium text-gray-600">예상 도입 시기: 2-5년 (2027년경)</p>
+                            </div>
+                            <button class="toggle-detail px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">자세히 보기</button>
+                        </div>
+                        <div class="tech-card-detail mt-6 pt-6 border-t border-gray-200">
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div>
+                                    <h4 class="font-semibold text-lg mb-2">주요 예측</h4>
+                                    <p class="text-gray-700">2027년까지 기업의 50% 이상이 비즈니스 가속화를 위해 산업별 특화 클라우드 플랫폼(ICP)을 활용할 것으로 예측됩니다.</p>
+                                </div>
+                                <div class="chart-container-doughnut">
+                                    <canvas id="icpChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-700">플랫폼 엔지니어링 (Platform Engineering)</h3>
+                                <p class="text-sm font-medium text-gray-600">예상 도입 시기: 2-5년 (2026년경)</p>
+                            </div>
+                            <button class="toggle-detail px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">자세히 보기</button>
+                        </div>
+                        <div class="tech-card-detail mt-6 pt-6 border-t border-gray-200">
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                                <div>
+                                    <h4 class="font-semibold text-lg mb-2">주요 예측</h4>
+                                    <p class="text-gray-700">2026년까지 대규모 소프트웨어 엔지니어링 조직의 80%가 내부 개발자용 서비스, 도구, 프로세스를 제공하는 플랫폼 엔지니어링 팀을 구축할 것입니다.</p>
+                                </div>
+                                <div class="chart-container-doughnut">
+                                    <canvas id="platformChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-700">지속적인 위협 노출 관리 (CTEM)</h3>
+                                <p class="text-sm font-medium text-gray-600">예상 도입 시기: 2-5년</p>
+                            </div>
+                            <button class="toggle-detail px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">자세히 보기</button>
+                        </div>
+                        <div class="tech-card-detail mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold text-lg mb-2">핵심 개념</h4>
+                            <p class="text-gray-700">기존의 주기적 보안 점검(예: 연간 침투 테스트)을 넘어, 기업의 디지털 및 물리적 자산에 대한 위협 노출을 지속적이고 능동적으로 관리하는 방식입니다. 방어자 관점이 아닌 공격자 관점에서 취약점을 식별하고 우선순위를 정합니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-700">자율 시스템 (Autonomous Systems)</h3>
+                                <p class="text-sm font-medium text-gray-600">예상 도입 시기: 5-10년</p>
+                            </div>
+                            <button class="toggle-detail px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">자세히 보기</button>
+                        </div>
+                        <div class="tech-card-detail mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold text-lg mb-2">현황 및 전망</h4>
+                            <p class="text-gray-700">자율 AI 시스템은 아직 초기 단계에 머물러 있습니다. 하지만 최근 인간형 로봇(Humanoid Robots) 등의 발전과 함께, 물리적 세계에서의 현실 적용이 점차 가시화되고 있습니다. 복잡한 환경에서 인간의 개입 없이 스스로 판단하고 작동하는 시스템을 목표로 합니다.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-700">양자 컴퓨팅 (Quantum Computing)</h3>
+                                <p class="text-sm font-medium text-gray-600">예상 도입 시기: 10년 이상</p>
+                            </div>
+                            <button class="toggle-detail px-4 py-2 bg-gray-200 text-gray-800 rounded-md text-sm font-medium hover:bg-gray-300 transition-colors">자세히 보기</button>
+                        </div>
+                        <div class="tech-card-detail mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="font-semibold text-lg mb-2">현황 및 전망</h4>
+                            <p class="text-gray-700">현재는 주로 연구 및 제한적 활용 단계에 있습니다. 양자 중첩 및 얽힘을 이용한 혁신적인 연산 능력을 갖추었으나, 안정적인 큐비트 유지, 오류 수정 등 해결해야 할 기술적 과제가 많습니다. 주류 시장 도입까지는 10년 이상 소요될 것으로 예상됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="timeline" class="view">
+            <h2 class="text-2xl font-bold mb-4 text-gray-800">도입 시기별 기술 로드맵</h2>
+            <p class="text-base text-gray-600 mb-8">
+                기술별 주류 도입 예상 시기를 타임라인 형태로 시각화했습니다. 단기, 중기, 장기적 관점에서 기술의 발전 로드맵을 살펴보세요.
+            </p>
+
+            <div class="timeline-container">
+                <div class="timeline-block">
+                    <div class="timeline-dot" style="border-color: #EF4444;"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-time" style="color: #EF4444;">2-5년 (단기)</h3>
+                        <p class="text-gray-700 font-semibold mb-2">즉각적인 변화 및 주류화</p>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>보편화된 생성형 AI (Democratized GenAI)</li>
+                            <li>AI 신뢰, 리스크 및 보안 관리 (AI TRiSM)</li>
+                            <li>산업 클라우드 플랫폼 (Industry Cloud Platforms)</li>
+                            <li>플랫폼 엔지니어링 (Platform Engineering)</li>
+                            <li>지속적인 위협 노출 관리 (CTEM)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="timeline-block">
+                    <div class="timeline-dot" style="border-color: #F97316;"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-time" style="color: #F97316;">5-10년 (중기)</h3>
+                        <p class="text-gray-700 font-semibold mb-2">성장 및 가시화</p>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>자율 시스템 (Autonomous Systems)</li>
+                        </ul>
+                        <p class="text-sm text-gray-500 mt-2">인간형 로봇 등과 함께 현실 적용이 가시화되는 시기입니다.</p>
+                    </div>
+                </div>
+
+                <div class="timeline-block">
+                    <div class="timeline-dot" style="border-color: #10B981;"></div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-time" style="color: #10B981;">10년+ (장기)</h3>
+                        <p class="text-gray-700 font-semibold mb-2">연구 및 미래 혁신</p>
+                        <ul class="list-disc list-inside space-y-1 text-gray-600">
+                            <li>양자 컴퓨팅 (Quantum Computing)</li>
+                        </ul>
+                         <p class="text-sm text-gray-500 mt-2">본격적인 주류 시장 도입까지 장기적인 연구 개발이 필요합니다.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="text-center mt-12 py-6 border-t border-gray-300">
+        <p class="text-sm text-gray-600">출처: Gartner 2024-2025 Reports (사용자 제공 데이터 기반)</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const reportData = {
+                genAi: {
+                    labels: ['도입 기업 (2026년)', '미도입 기업'],
+                    data: [80, 20]
+                },
+                icp: {
+                    labels: ['활용 기업 (2027년)', '미활용 기업'],
+                    data: [50, 50]
+                },
+                platform: {
+                    labels: ['구축 조직 (2026년)', '미구축 조직'],
+                    data: [80, 20]
+                },
+                timeline: {
+                    labels: [
+                        '양자 컴퓨팅', 
+                        '자율 시스템', 
+                        '지속적인 위협 노출 관리', 
+                        '플랫폼 엔지니어링', 
+                        '산업 클라우드 플랫폼', 
+                        'AI TRiSM', 
+                        '보편화된 생성형 AI'
+                    ],
+                    data: [10, 10, 5, 5, 5, 5, 5] 
+                }
+            };
+            
+            const chartColors = {
+                primary: '#3B82F6',
+                accent: '#10B981',
+                warning: '#F59E0B',
+                danger: '#EF4444',
+                light: '#E5E7EB',
+                info: '#38BDF8',
+                success: '#22C55E'
+            };
+
+            const commonDoughnutOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: { size: 10 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: (tooltipItems) => {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                return Array.isArray(label) ? label.join(' ') : label;
+                            }
+                        }
+                    }
+                }
+            };
+
+            let charts = {};
+
+            function createDoughnutChart(ctx, chartId, chartData, colors) {
+                if (charts[chartId]) charts[chartId].destroy();
+                charts[chartId] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            data: chartData.data,
+                            backgroundColor: colors,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: commonDoughnutOptions
+                });
+            }
+
+            const navigation = document.getElementById('navigation');
+            const views = document.querySelectorAll('.view');
+            const navButtons = document.querySelectorAll('.nav-btn');
+
+            navigation.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON') {
+                    const viewId = e.target.getAttribute('data-view');
+                    
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    views.forEach(view => {
+                        view.classList.remove('active');
+                        if (view.id === viewId) {
+                            view.classList.add('active');
+                        }
+                    });
+                }
+            });
+
+            const techCardContainer = document.getElementById('tech-card-container');
+            techCardContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('toggle-detail')) {
+                    const button = e.target;
+                    const card = button.closest('.bg-white');
+                    const detailView = card.querySelector('.tech-card-detail');
+                    const wasActive = detailView.classList.contains('show');
+
+                    document.querySelectorAll('.tech-card-detail').forEach(d => {
+                        d.classList.remove('show');
+                        d.closest('.bg-white').querySelector('.toggle-detail').textContent = '자세히 보기';
+                    });
+
+                    if (!wasActive) {
+                        detailView.classList.add('show');
+                        button.textContent = '닫기';
+                        
+                        if (card.querySelector('#genAiChart') && !charts.genAiChart) {
+                            createDoughnutChart(
+                                document.getElementById('genAiChart').getContext('2d'), 
+                                'genAiChart', 
+                                reportData.genAi, 
+                                [chartColors.primary, chartColors.light]
+                            );
+                        }
+                        if (card.querySelector('#icpChart') && !charts.icpChart) {
+                            createDoughnutChart(
+                                document.getElementById('icpChart').getContext('2d'), 
+                                'icpChart', 
+                                reportData.icp, 
+                                [chartColors.accent, chartColors.light]
+                            );
+                        }
+                        if (card.querySelector('#platformChart') && !charts.platformChart) {
+                             createDoughnutChart(
+                                document.getElementById('platformChart').getContext('2d'),
+                                'platformChart', 
+                                reportData.platform, 
+                                [chartColors.warning, chartColors.light]
+                            );
+                        }
+                    } else {
+                        detailView.classList.remove('show');
+                        button.textContent = '자세히 보기';
+                    }
+                }
+            });
+            
+            const timelineBarCtx = document.getElementById('timelineBarChart').getContext('2d');
+            charts.timelineBarChart = new Chart(timelineBarCtx, {
+                type: 'bar',
+                data: {
+                    labels: reportData.timeline.labels.map(l => l.length > 15 ? l.split(' ') : l),
+                    datasets: [{
+                        label: '예상 주류 도입 시기 (년, 최대치)',
+                        data: reportData.timeline.data,
+                        backgroundColor: [
+                            chartColors.success,
+                            chartColors.accent,
+                            chartColors.info,
+                            chartColors.warning,
+                            chartColors.warning,
+                            chartColors.danger,
+                            chartColors.danger,
+                        ],
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 12,
+                            ticks: {
+                                callback: (value) => value + '년'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (tooltipItems) => {
+                                    const item = tooltipItems[0];
+                                    let label = item.chart.data.labels[item.dataIndex];
+                                    return Array.isArray(label) ? label.join(' ') : label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
